@@ -1,0 +1,102 @@
+[
+  {
+    "clube": "Flamengo",
+    "pos": 2,
+    "pts": 72
+  },
+  {
+    "clube": "Palmeiras",
+    "pos": 1,
+    "pts": 80
+  },
+  {
+    "clube": "Santos",
+    "pos": 10,
+    "pts": 50
+  },
+  {
+    "clube": "Grêmio",
+    "pos": 4,
+    "pts": 66
+  },
+  {
+    "clube": "São Paulo",
+    "pos": 5,
+    "pts": 63
+  },
+  {
+    "clube": "Corinthians",
+    "pos": 13,
+    "pts": 44
+  },
+  {
+    "clube": "Athlético-PR",
+    "pos": 7,
+    "pts": 57
+  },
+  {
+    "clube": "Internacional",
+    "pos": 3,
+    "pts": 69
+  },
+  {
+    "clube": "Bahia",
+    "pos": 11,
+    "pts": 48
+  },
+  {
+    "clube": "Goiás",
+    "pos": 20,
+    "pts": 1
+  },
+  {
+    "clube": "Atlético-MG",
+    "pos": 6,
+    "pts": 59
+  },
+  {
+    "clube": "Vasco",
+    "pos": 16,
+    "pts": 43
+  },
+  {
+    "clube": "Ceará",
+    "pos": 15,
+    "pts": 44
+  },
+  {
+    "clube": "Fortaleza",
+    "pos": 17,
+    "pts": 4
+  },
+  {
+    "clube": "Fluminense",
+    "pos": 12,
+    "pts": 45
+  },
+  {
+    "clube": "Cruzeiro",
+    "pos": 8,
+    "pts": 53
+  },
+  {
+    "clube": "Botafogo",
+    "pos": 9,
+    "pts": 51
+  },
+  {
+    "clube": "CSA",
+    "pos": 18,
+    "pts": 3
+  },
+  {
+    "clube": "Chapecoense",
+    "pos": 14,
+    "pts": 44
+  },
+  {
+    "clube": "Avaí",
+    "pos": 19,
+    "pts": 2
+  }
+]

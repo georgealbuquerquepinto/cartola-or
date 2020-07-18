@@ -1,0 +1,82 @@
+[
+  {
+    "clube": "Flamengo",
+    "casa": 1
+  },
+  {
+    "clube": "Palmeiras",
+    "casa": 1
+  },
+  {
+    "clube": "Santos",
+    "casa": 0
+  },
+  {
+    "clube": "Grêmio",
+    "casa": 1
+  },
+  {
+    "clube": "São Paulo",
+    "casa": 1
+  },
+  {
+    "clube": "Corinthians",
+    "casa": 0
+  },
+  {
+    "clube": "Athlético-PR",
+    "casa": 1
+  },
+  {
+    "clube": "Internacional",
+    "casa": 0
+  },
+  {
+    "clube": "Bahia",
+    "casa": 1
+  },
+  {
+    "clube": "Goiás",
+    "casa": 0
+  },
+  {
+    "clube": "Atlético-MG",
+    "casa": 1
+  },
+  {
+    "clube": "Vasco",
+    "casa": 0
+  },
+  {
+    "clube": "Ceará",
+    "casa": 1
+  },
+  {
+    "clube": "Fortaleza",
+    "casa": 0
+  },
+  {
+    "clube": "Fluminense",
+    "casa": 1
+  },
+  {
+    "clube": "Cruzeiro",
+    "casa": 0
+  },
+  {
+    "clube": "Botafogo",
+    "casa": 0
+  },
+  {
+    "clube": "CSA",
+    "casa": 0
+  },
+  {
+    "clube": "Chapecoense",
+    "casa": 1
+  },
+  {
+    "clube": "Avaí",
+    "casa": 0
+  }
+]
