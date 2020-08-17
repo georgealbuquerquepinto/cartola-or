@@ -1,250 +1,348 @@
-from __future__ import print_function
+import requests
+from bs4 import BeautifulSoup
 from ortools.linear_solver import pywraplp
-import json
 
-def main():
-  jogadores     = json.load(open('data/2019/br2019_01.json'))
-  jogadores_pos = json.load(open('data/2019/br2019_02.json'))
-  classificacao = json.load(open('data/2019/classificacao_01.json'))
-  rodada        = json.load(open('data/2019/jogos_01.json'))
+gol_id = 1
+lat_id = 2
+zag_id = 3
+mei_id = 4
+ata_id = 5
+tec_id = 6
 
-  G = []
-  L = []
-  Z = []
-  M = []
-  A = []
-  T = []
-  JOG = {}
-  CL = {}
-  ptsTotal = 0
+def getClassificacao():
+  CLUBES = {
+    'ATHLÉTICO-PR' : { 'id': 293 },
+    'ATLÉTICO-GO'  : { 'id': 373 },
+    'ATLÉTICO-MG'  : { 'id': 282 },
+    'BAHIA'        : { 'id': 265 },
+    'BOTAFOGO'     : { 'id': 263 },
+    'BRAGANTINO'   : { 'id': 280 },
+    'CEARÁ'        : { 'id': 354 },
+    'CORINTHIANS'  : { 'id': 264 },
+    'CORITIBA'     : { 'id': 294 },
+    'FLAMENGO'     : { 'id': 262 },
+    'FLUMINENSE'   : { 'id': 266 },
+    'FORTALEZA'    : { 'id': 356 },
+    'GOIÁS'        : { 'id': 290 },
+    'GRÊMIO'       : { 'id': 284 },
+    'INTERNACIONAL': { 'id': 285 },
+    'PALMEIRAS'    : { 'id': 275 },
+    'SANTOS'       : { 'id': 277 },
+    'SPORT'        : { 'id': 292 },
+    'SÃO PAULO'    : { 'id': 276 },
+    'VASCO DA GAMA': { 'id': 267 }
+  }
 
-  # Cartoletas disponíveis
-  C = 114.6
+  url = 'http://www.mat.ufmg.br/futebol/classificacao-geral_seriea/'
 
-  # Ler dados de classificação
-  for item in classificacao:
-    time = {
-      'pos' : None,
-      'pts' : None,
-      'casa': None
-    }
+  html_content = requests.get(url).text
+  bs = BeautifulSoup(html_content, 'lxml')
+
+  tabela = bs.find('table', attrs={'id': 'tabelaCL'}).tbody.find_all('tr')
+  classificacao = []
+
+  for i in range(len(tabela)):
+    clube = {}
+    linha = []
+
+    for td in tabela[i].find_all('td'):
+      linha.append(td.text.replace('\n', ' ').strip())
     
-    time['pos'] = int(item['pos'])
-    time['pts'] = int(item['pts'])
-    clube = item['clube']
-    ptsTotal += time['pts']
+    clube['nome']  = linha[1]
+    clube['clube'] = CLUBES[str(linha[1])]['id']
+    clube['pos']   = linha[0]
+    clube['pts']   = linha[2]
+    
+    classificacao.append(clube)
 
-    CL[clube] = time
+  return classificacao
 
-  if ptsTotal == 0:
-    ptsTotal = 1
-
-  # Ler dados de jogos
-  for item in rodada:
-    clube = item['clube']
-
-    CL[clube]['casa'] = int(item['casa'])
+def getMercado():
+  url_mercado  = 'https://api.cartolafc.globo.com/atletas/mercado'
+  url_partidas = 'https://api.cartolafc.globo.com/partidas/%s'
   
-  # Ler dados de jogadores
-  for item in jogadores:
-    J = {
-      'apelido'   : None,
-      'status_id' : None,
-      'pontos_num': None,
-      'preco_num' : None,
-      'media_num' : None,
-      'posicao_id': None,
-      'clube'     : None,
-      'id'        : None
-    }
-    
-    J['apelido']    = item['apelido']
-    J['status_id']  = int(item['status_id'])
-    J['pontos_num'] = float(item['pontos_num'])
-    J['preco_num']  = float(item['preco_num'])
-    J['media_num']  = float(item['media_num'])
-    J['posicao_id'] = int(item['posicao_id'])
-    J['clube']      = item['clube']
-    J['id']         = item['atleta_id']
-
-    if int(J['status_id']) == 7:
-      if int(J['posicao_id']) == 1:
-        G.append(J)
-      elif int(J['posicao_id']) == 2:
-        L.append(J)
-      elif int(J['posicao_id']) == 3:
-        Z.append(J)
-      elif int(J['posicao_id']) == 4:
-        M.append(J)
-      elif int(J['posicao_id']) == 5:
-        A.append(J)
-      elif int(J['posicao_id']) == 6:
-        T.append(J)
+  mercado = requests.get(url_mercado)
   
-  # Ler dados de pontuação e vaiação
-  for item in jogadores_pos:
-    J = {
-      'pontos_num'  : None,
-      'variacao_num': None
-    }
-    
-    J['pontos_num']    = float(item['pontos_num'])
-    J['variacao_num']  = float(item['variacao_num'])
+  atletas  = mercado.json()['atletas']
+  clubes   = mercado.json()['clubes']
+  rodada   = int(atletas[0]['rodada_id'])
+  partidas = requests.get(url_partidas % (rodada + 1)).json()['partidas']
 
-    JOG[item['atleta_id']] = J
+  classificacao = getClassificacao()
 
-  # Cria solver
+  return atletas, clubes, partidas, classificacao
+
+def solver(CLUBES, GOL, LAT, ZAG, MEI, ATA, TEC, cartoletas, ptsTotal):
+  # Definição do solver
   solver = pywraplp.Solver('simple_lp_program', pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
 
-  Gb = {}
-  Lb = {}
-  Zb = {}
-  Mb = {}
-  Ab = {}
-  Tb = {}
+  # Declaração da variável binárias que representam os jogadores por posição
+  # A variável recebe 1, se o jogador foi selecionado, ou 0, caso contrário
+  GOL_b = {}
+  LAT_b = {}
+  ZAG_b = {}
+  MEI_b = {}
+  ATA_b = {}
+  TEC_b = {}
 
-  # Variáveis binárias para goleiros
-  for i in range(len(G)):
-    Gb[i] = solver.BoolVar('Gb[{}]'.format(i))
+  # Definição das variáveis binárias dos goleiros
+  for i in range(len(GOL)):
+    GOL_b[i] = solver.BoolVar('GOL_b[{}]'.format(i))
 
-  # Variáveis binárias para laterais
-  for i in range(len(L)):
-    Lb[i] = solver.BoolVar('Lb[{}]'.format(i))
+  # Definição das variáveis binárias dos laterais
+  for i in range(len(LAT)):
+    LAT_b[i] = solver.BoolVar('LAT_b[{}]'.format(i))
 
-  # Variáveis binárias para zagueiros
-  for i in range(len(Z)):
-    Zb[i] = solver.BoolVar('Zb[{}]'.format(i))
+  # Definição das variáveis binárias dos zagueiros
+  for i in range(len(ZAG)):
+    ZAG_b[i] = solver.BoolVar('ZAG_b[{}]'.format(i))
 
-  # Variáveis binárias para meias
-  for i in range(len(M)):
-    Mb[i] = solver.BoolVar('Mb[{}]'.format(i))
+  # Definição das variáveis binárias dos meias
+  for i in range(len(MEI)):
+    MEI_b[i] = solver.BoolVar('MEI_b[{}]'.format(i))
 
-  # Variáveis binárias para atacantes
-  for i in range(len(A)):
-    Ab[i] = solver.BoolVar('Ab[{}]'.format(i))
+  # Definição das variáveis binárias dos atacantes
+  for i in range(len(ATA)):
+    ATA_b[i] = solver.BoolVar('ATA_b[{}]'.format(i))
 
-  # Variáveis binárias para técnicos
-  for i in range(len(T)):
-    Tb[i] = solver.BoolVar('Tb[{}]'.format(i))
+  # Definição das variáveis binárias dos técnicos
+  for i in range(len(TEC)):
+    TEC_b[i] = solver.BoolVar('TEC_b[{}]'.format(i))
 
-  # Variável binária para definir se o time possui laterais
+  # Variável binária para definir se o escalação possui laterais.
+  # A variável recebe 1, se será escalado laterais, ou 0, caso contrário
   z = solver.BoolVar('z')
 
   # Restrições de quantidade de jogadores por posição
-  solver.Add(solver.Sum(Gb[i] for i in range(len(Gb))) == 1)
-  solver.Add(solver.Sum(Lb[i] for i in range(len(Lb))) == 2 * z)
-  solver.Add(solver.Sum(Zb[i] for i in range(len(Zb))) >= 2)
-  solver.Add(solver.Sum(Zb[i] for i in range(len(Zb))) <= 3)
-  solver.Add(solver.Sum(Mb[i] for i in range(len(Mb))) >= 3)
-  solver.Add(solver.Sum(Mb[i] for i in range(len(Mb))) <= 5)
-  solver.Add(solver.Sum(Ab[i] for i in range(len(Ab))) >= 1)
-  solver.Add(solver.Sum(Ab[i] for i in range(len(Ab))) <= 3)
-  solver.Add(solver.Sum(Tb[i] for i in range(len(Tb))) == 1)
+  # A escalação deve ter 1 goleiro
+  solver.Add(solver.Sum(GOL_b[i] for i in range(len(GOL_b))) == 1)
+  # A escalação deve ter 0 ou 2 laterais
+  solver.Add(solver.Sum(LAT_b[i] for i in range(len(LAT_b))) == 2 * z)
+  # A escalação deve ter no mínimo 2 zagueiros
+  solver.Add(solver.Sum(ZAG_b[i] for i in range(len(ZAG_b))) >= 2)
+  # A escalação deve ter no máximo 3 zagueiros
+  solver.Add(solver.Sum(ZAG_b[i] for i in range(len(ZAG_b))) <= 3)
+  # A escalação deve ter no mínimo 2 meias
+  solver.Add(solver.Sum(MEI_b[i] for i in range(len(MEI_b))) >= 3)
+  # A escalação deve ter no máximo 5 meias
+  solver.Add(solver.Sum(MEI_b[i] for i in range(len(MEI_b))) <= 5)
+  # A escalação deve ter no mínimo 1 atacante
+  solver.Add(solver.Sum(ATA_b[i] for i in range(len(ATA_b))) >= 1)
+  # A escalação deve ter no máximo 3 atacantes
+  solver.Add(solver.Sum(ATA_b[i] for i in range(len(ATA_b))) <= 3)
+  # A escalação deve ter 1 técnico
+  solver.Add(solver.Sum(TEC_b[i] for i in range(len(TEC_b))) == 1)
 
-  # Restrição para a defesar ter pelo menos 3 jogadores
+  # Restrição para a defesa ter pelo menos 3 jogadores
   solver.Add(
-    solver.Sum(Lb[i] for i in range(len(Lb))) +
-    solver.Sum(Zb[i] for i in range(len(Zb))) >= 3
+    solver.Sum(LAT_b[i] for i in range(len(LAT_b))) +
+    solver.Sum(ZAG_b[i] for i in range(len(ZAG_b))) >= 3
   )
 
-  # Restrição para definir o time com 12 membros
+  # Restrição para definir a escalação com 12 jogadores
   solver.Add(
-    solver.Sum(Gb[i] for i in range(len(Gb))) +
-    solver.Sum(Lb[i] for i in range(len(Lb))) +
-    solver.Sum(Zb[i] for i in range(len(Zb))) +
-    solver.Sum(Mb[i] for i in range(len(Mb))) +
-    solver.Sum(Ab[i] for i in range(len(Ab))) +
-    solver.Sum(Tb[i] for i in range(len(Tb))) == 12)
+    solver.Sum(GOL_b[i] for i in range(len(GOL_b))) +
+    solver.Sum(LAT_b[i] for i in range(len(LAT_b))) +
+    solver.Sum(ZAG_b[i] for i in range(len(ZAG_b))) +
+    solver.Sum(MEI_b[i] for i in range(len(MEI_b))) +
+    solver.Sum(ATA_b[i] for i in range(len(ATA_b))) +
+    solver.Sum(TEC_b[i] for i in range(len(TEC_b))) == 12)
 
-  # Restrição para limitar o preço do time
+  # Restrição para limitar o preço da escalação
   solver.Add(
-    solver.Sum(G[i]['preco_num'] * Gb[i] for i in range(len(Gb))) +
-    solver.Sum(L[i]['preco_num'] * Lb[i] for i in range(len(Lb))) +
-    solver.Sum(Z[i]['preco_num'] * Zb[i] for i in range(len(Zb))) +
-    solver.Sum(M[i]['preco_num'] * Mb[i] for i in range(len(Mb))) +
-    solver.Sum(A[i]['preco_num'] * Ab[i] for i in range(len(Ab))) +
-    solver.Sum(T[i]['preco_num'] * Tb[i] for i in range(len(Tb))) <= C)
+    solver.Sum(GOL[i]['preco_num'] * GOL_b[i] for i in range(len(GOL_b))) +
+    solver.Sum(LAT[i]['preco_num'] * LAT_b[i] for i in range(len(LAT_b))) +
+    solver.Sum(ZAG[i]['preco_num'] * ZAG_b[i] for i in range(len(ZAG_b))) +
+    solver.Sum(MEI[i]['preco_num'] * MEI_b[i] for i in range(len(MEI_b))) +
+    solver.Sum(ATA[i]['preco_num'] * ATA_b[i] for i in range(len(ATA_b))) +
+    solver.Sum(TEC[i]['preco_num'] * TEC_b[i] for i in range(len(TEC_b))) <= cartoletas)
 
   # Função objetivo
   solver.Maximize(
-    solver.Sum((G[i]['media_num'] + (CL[G[i]['clube']]['casa']) + (CL[G[i]['clube']]['pts'] / ptsTotal) + (2.0 - (CL[G[i]['clube']]['pos']/10.0))) * Gb[i] for i in range(len(Gb))) +
-    solver.Sum((L[i]['media_num'] + (CL[L[i]['clube']]['casa']) + (CL[L[i]['clube']]['pts'] / ptsTotal) + (2.0 - (CL[L[i]['clube']]['pos']/10.0))) * Lb[i] for i in range(len(Lb))) +
-    solver.Sum((Z[i]['media_num'] + (CL[Z[i]['clube']]['casa']) + (CL[Z[i]['clube']]['pts'] / ptsTotal) + (2.0 - (CL[Z[i]['clube']]['pos']/10.0))) * Zb[i] for i in range(len(Zb))) +
-    solver.Sum((M[i]['media_num'] + (CL[M[i]['clube']]['casa']) + (CL[M[i]['clube']]['pts'] / ptsTotal) + (2.0 - (CL[M[i]['clube']]['pos']/10.0))) * Mb[i] for i in range(len(Mb))) +
-    solver.Sum((A[i]['media_num'] + (CL[A[i]['clube']]['casa']) + (CL[A[i]['clube']]['pts'] / ptsTotal) + (2.0 - (CL[A[i]['clube']]['pos']/10.0))) * Ab[i] for i in range(len(Ab))) +
-    solver.Sum((T[i]['media_num'] + (CL[T[i]['clube']]['casa']) + (CL[T[i]['clube']]['pts'] / ptsTotal) + (2.0 - (CL[T[i]['clube']]['pos']/10.0))) * Tb[i] for i in range(len(Tb)))
+    solver.Sum((GOL[i]['media_num'] + (CLUBES[str(GOL[i]['clube'])]['casa']) + (CLUBES[str(GOL[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(GOL[i]['clube'])]['pos'] / 10.0))) * GOL_b[i] for i in range(len(GOL_b))) +
+    solver.Sum((LAT[i]['media_num'] + (CLUBES[str(LAT[i]['clube'])]['casa']) + (CLUBES[str(LAT[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(LAT[i]['clube'])]['pos'] / 10.0))) * LAT_b[i] for i in range(len(LAT_b))) +
+    solver.Sum((ZAG[i]['media_num'] + (CLUBES[str(ZAG[i]['clube'])]['casa']) + (CLUBES[str(ZAG[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(ZAG[i]['clube'])]['pos'] / 10.0))) * ZAG_b[i] for i in range(len(ZAG_b))) +
+    solver.Sum((MEI[i]['media_num'] + (CLUBES[str(MEI[i]['clube'])]['casa']) + (CLUBES[str(MEI[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(MEI[i]['clube'])]['pos'] / 10.0))) * MEI_b[i] for i in range(len(MEI_b))) +
+    solver.Sum((ATA[i]['media_num'] + (CLUBES[str(ATA[i]['clube'])]['casa']) + (CLUBES[str(ATA[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(ATA[i]['clube'])]['pos'] / 10.0))) * ATA_b[i] for i in range(len(ATA_b))) +
+    solver.Sum((TEC[i]['media_num'] + (CLUBES[str(TEC[i]['clube'])]['casa']) + (CLUBES[str(TEC[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(TEC[i]['clube'])]['pos'] / 10.0))) * TEC_b[i] for i in range(len(TEC_b)))
   )
 
-  # Solver
-  sol = solver.Solve()
+  # Resolvendo o problema
+  solucao = solver.Solve()
 
-  print('Solução:')
+  # Exibindo a solução
+  print('\033[1mSOLUÇÃO\033[0m')
   print('Valor da função objetivo = %.2f' % solver.Objective().Value())
   print('Tempo = ', solver.WallTime(), ' ms')
-  
-  cont_def = 0
-  cont_mei = 0
-  cont_ata = 0
-  preco_total = 0
-  variacao = 0
-  pontuacao = 0
+
+  esquema = {
+    'defesa': 0,
+    'meia': 0,
+    'ataque': 0
+  }
+  custoEscalacao = 0
+  capitao = {
+    'pontos': 0,
+    'jogador': None,
+    'clube': None,
+    'pos': None
+  }
 
   print('┌─────┬──────────────────────┬─────────────────┬───────┐')
   print('│\033[1m POS \033[0m│\033[1m %-20s \033[0m│\033[1m %-15s \033[0m│ \033[1m%s \033[0m│' % ('JOGADOR', 'TIME', 'PREÇO'))
   print('├─────┼──────────────────────┼─────────────────┼───────┤')
 
-  for i in range(len(G)):
-    if Gb[i].solution_value() > 0:
-      print('│ GOL │ %-20s │ %-15s │ %5.2f │' % (G[i]['apelido'], G[i]['clube'], G[i]['preco_num']))
-      preco_total += G[i]['preco_num']
-      pontuacao += JOG[G[i]['id']]['pontos_num']
-      variacao += JOG[G[i]['id']]['variacao_num']
+  for i in range(len(GOL)):
+    if GOL_b[i].solution_value() > 0:
+      print('│ GOL │ %-20s │ %-15s │ %5.2f │' % (GOL[i]['apelido'], CLUBES[str(GOL[i]['clube'])]['nome'], GOL[i]['preco_num']))
+      
+      custoEscalacao += GOL[i]['preco_num']
+      pts = GOL[i]['media_num'] + (CLUBES[str(GOL[i]['clube'])]['casa']) + (CLUBES[str(GOL[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(GOL[i]['clube'])]['pos'] / 10.0))
+      
+      if pts >= capitao['pontos']:
+        capitao['pontos'] = pts
+        capitao['jogador'] = GOL[i]['apelido']
+        capitao['clube'] = CLUBES[str(GOL[i]['clube'])]['nome']
+        capitao['pos'] = 'GOL'
 
-  for i in range(len(L)):
-    if Lb[i].solution_value() > 0:
-      print('│ LAT │ %-20s │ %-15s │ %5.2f │' % (L[i]['apelido'],L[i]['clube'],L[i]['preco_num']))
-      cont_def += 1
-      preco_total += L[i]['preco_num']
-      pontuacao += JOG[L[i]['id']]['pontos_num']
-      variacao += JOG[L[i]['id']]['variacao_num']
+  for i in range(len(LAT)):
+    if LAT_b[i].solution_value() > 0:
+      print('│ LAT │ %-20s │ %-15s │ %5.2f │' % (LAT[i]['apelido'], CLUBES[str(LAT[i]['clube'])]['nome'], LAT[i]['preco_num']))
+      
+      esquema['defesa'] += 1      
+      custoEscalacao += LAT[i]['preco_num']      
+      pts = LAT[i]['media_num'] + CLUBES[str(LAT[i]['clube'])]['casa'] + (CLUBES[str(LAT[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(LAT[i]['clube'])]['pos'] / 10.0))
 
-  for i in range(len(Z)):
-    if Zb[i].solution_value() > 0:
-      print('│ ZAG │ %-20s │ %-15s │ %5.2f │' % (Z[i]['apelido'],Z[i]['clube'],Z[i]['preco_num']))
-      cont_def += 1
-      preco_total += Z[i]['preco_num']
-      pontuacao += JOG[Z[i]['id']]['pontos_num']
-      variacao += JOG[Z[i]['id']]['variacao_num']
+      if pts >= capitao['pontos']:
+        capitao['pontos'] = pts
+        capitao['jogador'] = LAT[i]['apelido']
+        capitao['clube'] = CLUBES[str(LAT[i]['clube'])]['nome']
+        capitao['pos'] = 'LAT'
 
-  for i in range(len(M)):
-    if Mb[i].solution_value() > 0:
-      print('│ MEI │ %-20s │ %-15s │ %5.2f │' % (M[i]['apelido'],M[i]['clube'],M[i]['preco_num']))
-      cont_mei += 1
-      preco_total += M[i]['preco_num']
-      pontuacao += JOG[M[i]['id']]['pontos_num']
-      variacao += JOG[M[i]['id']]['variacao_num']
+  for i in range(len(ZAG)):
+    if ZAG_b[i].solution_value() > 0:
+      print('│ ZAG │ %-20s │ %-15s │ %5.2f │' % (ZAG[i]['apelido'], CLUBES[str(ZAG[i]['clube'])]['nome'], ZAG[i]['preco_num']))
+
+      esquema['defesa'] += 1
+      custoEscalacao += ZAG[i]['preco_num']
+      pts = ZAG[i]['media_num'] + CLUBES[str(ZAG[i]['clube'])]['casa'] + (CLUBES[str(ZAG[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(ZAG[i]['clube'])]['pos'] / 10.0))
+
+      if pts >= capitao['pontos']:
+        capitao['pontos'] = pts
+        capitao['jogador'] = ZAG[i]['apelido']
+        capitao['clube'] = CLUBES[str(ZAG[i]['clube'])]['nome']
+        capitao['pos'] = 'ZAG'
+
+  for i in range(len(MEI)):
+    if MEI_b[i].solution_value() > 0:
+      print('│ MEI │ %-20s │ %-15s │ %5.2f │' % (MEI[i]['apelido'], CLUBES[str(MEI[i]['clube'])]['nome'], MEI[i]['preco_num']))
+      
+      esquema['meia'] += 1
+      custoEscalacao += MEI[i]['preco_num']
+      pts = MEI[i]['media_num'] + CLUBES[str(MEI[i]['clube'])]['casa'] + (CLUBES[str(MEI[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(MEI[i]['clube'])]['pos'] / 10.0))
+
+      if pts >= capitao['pontos']:
+        capitao['pontos'] = pts
+        capitao['jogador'] = MEI[i]['apelido']
+        capitao['clube'] = CLUBES[str(MEI[i]['clube'])]['nome']
+        capitao['pos'] = 'MEI'
   
-  for i in range(len(A)):
-    if Ab[i].solution_value() > 0:
-      print('│ ATA │ %-20s │ %-15s │ %5.2f │' % (A[i]['apelido'],A[i]['clube'],A[i]['preco_num']))
-      cont_ata += 1
-      preco_total += A[i]['preco_num']
-      pontuacao += JOG[A[i]['id']]['pontos_num']
-      variacao += JOG[A[i]['id']]['variacao_num']
+  for i in range(len(ATA)):
+    if ATA_b[i].solution_value() > 0:
+      print('│ ATA │ %-20s │ %-15s │ %5.2f │' % (ATA[i]['apelido'], CLUBES[str(ATA[i]['clube'])]['nome'], ATA[i]['preco_num']))
+      
+      esquema['ataque'] += 1
+      custoEscalacao += ATA[i]['preco_num']
+      pts = ATA[i]['media_num'] + CLUBES[str(ATA[i]['clube'])]['casa'] + (CLUBES[str(ATA[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(ATA[i]['clube'])]['pos'] / 10.0))
+
+      if pts >= capitao['pontos']:
+        capitao['pontos'] = pts
+        capitao['jogador'] = ATA[i]['apelido']
+        capitao['clube'] = CLUBES[str(ATA[i]['clube'])]['nome']
+        capitao['pos'] = 'ATA'
   
-  for i in range(len(T)):
-    if Tb[i].solution_value() > 0:
-      print('│ TEC │ %-20s │ %-15s │ %5.2f │' % (T[i]['apelido'],T[i]['clube'],T[i]['preco_num']))
-      preco_total += T[i]['preco_num']
-      pontuacao += JOG[T[i]['id']]['pontos_num']
-      variacao += JOG[T[i]['id']]['variacao_num']
+  for i in range(len(TEC)):
+    if TEC_b[i].solution_value() > 0:
+      print('│ TEC │ %-20s │ %-15s │ %5.2f │' % (TEC[i]['apelido'], CLUBES[str(TEC[i]['clube'])]['nome'], TEC[i]['preco_num']))
+      
+      custoEscalacao += TEC[i]['preco_num']
 
   print('└─────┴──────────────────────┴─────────────────┴───────┘')
 
-  print('Esquema: {}-{}-{}'.format(cont_def,cont_mei,cont_ata))
-  print('Preço total: %.2f' % preco_total)
-  print('Pontuação: %.2f' % pontuacao)
-  print('Variação: %.2f' % variacao)
+  print('Esquema: {}-{}-{}'.format(esquema['defesa'], esquema['meia'], esquema['ataque']))
+  print('Preço total: %.2f' % custoEscalacao)
+  print('Capitão: %s %s (%s)' % (capitao['pos'], capitao['jogador'], capitao['clube']))
+
+def main():
+  # Recebe dados do mercado
+  atletas, clubes, partidas, classificacao = getMercado()
+
+  # Ler a quantidade de cartoletas disponíveis
+  cartoletas = float(input('Digite a quantidade de cartoletas disponíveis: '))
+
+  GOL = []
+  LAT = []
+  ZAG = []
+  MEI = []
+  ATA = []
+  TEC = []
+  CLUBES = {}
+  ptsTotal = 0
+
+  # Ler dados dos clubes
+  for item in clubes:
+    C = {
+      'nome': clubes[item]['nome'],
+      'abreviacao': clubes[item]['abreviacao'],
+      'pos': 0,
+      'pts': 0,
+      'casa': 0
+    }
+    
+    CLUBES[item] = C
+  
+  # Ler dados das partidas
+  for item in partidas:
+    CLUBES[str(item['clube_casa_id'])]['casa'] = 1
+
+  # Ler dados da classificação
+  for item in classificacao:
+    CLUBES[str(item['clube'])]['pos'] = int(item['pos'])
+    CLUBES[str(item['clube'])]['pts'] = int(item['pts'])
+    ptsTotal += int(item['pts'])
+
+  if ptsTotal == 0:
+    ptsTotal = 1
+  
+  # Ler dados dos jogadores
+  for item in atletas:
+    J = {
+      'id'        : item['atleta_id'],
+      'apelido'   : item['apelido'],
+      'status_id' : int(item['status_id']),
+      'pontos_num': float(item['pontos_num']),
+      'preco_num' : float(item['preco_num']),
+      'media_num' : float(item['media_num']),
+      'posicao_id': int(item['posicao_id']),
+      'clube'     : int(item['clube_id'])
+    }
+
+    # Seleciona jogadores com status Provável
+    if int(J['status_id']) == 7:
+      if int(J['posicao_id']) == gol_id:
+        GOL.append(J)
+      elif int(J['posicao_id']) == lat_id:
+        LAT.append(J)
+      elif int(J['posicao_id']) == zag_id:
+        ZAG.append(J)
+      elif int(J['posicao_id']) == mei_id:
+        MEI.append(J)
+      elif int(J['posicao_id']) == ata_id:
+        ATA.append(J)
+      elif int(J['posicao_id']) == tec_id:
+        TEC.append(J)
+
+  solver(CLUBES, GOL, LAT, ZAG, MEI, ATA, TEC, cartoletas, ptsTotal)
 
 if __name__ == '__main__':
   main()
