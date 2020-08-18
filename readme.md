@@ -13,9 +13,9 @@ _Esta é uma aplicação que recomenda a escalação da rodada para o fantasy ga
 
 ## Modelo matemático
 Nome modelo matemático para cada jogador é levado em consideração sua média. Um jogador pode ter os seguintes acréscimos em seu valor:
-* $1$, se seu clube é o mandante da partida;
-* $\frac{PG_{clube}}{P_{total}}$, onde $PG_{clube}$ são os pontos ganhos do seu clube e $P_{total}$ é o somatório dos pontos ganhos de todos os clubes;
-* $2-\frac{P_{clube}}{10}$, onde $P_{clube}$ é a posição de seu clube na tabela.
+* ![equation](https://latex.codecogs.com/gif.latex?1), se seu clube é o mandante da partida;
+* ![equation](https://latex.codecogs.com/gif.latex?\frac{PG_{clube}}{P_{total}}), onde ![equation](https://latex.codecogs.com/gif.latex?PG_{clube}) são os pontos ganhos do seu clube e ![equation](https://latex.codecogs.com/gif.latex?P_{total}) é o somatório dos pontos ganhos de todos os clubes;
+* ![equation](https://latex.codecogs.com/gif.latex?2-\frac{Pos_{clube}}{10}), onde ![equation](https://latex.codecogs.com/gif.latex?Pos_{clube}) é a posição de seu clube na tabela.
 
 ## Fontes de dados
 * Mercado: API Cartola FC (https://api.cartolafc.globo.com/atletas/mercado);
