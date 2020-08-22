@@ -5,7 +5,7 @@ _Esta é uma aplicação que recomenda a escalação da rodada para o fantasy ga
 
   
 
-## Tecnologias:
+## Tecnologias
 
 *  [Python](https://www.python.org/)
 
@@ -21,6 +21,14 @@ Nome modelo matemático para cada jogador é levado em consideração sua média
 * Mercado: API Cartola FC (https://api.cartolafc.globo.com/atletas/mercado);
 * Partidas: API Cartola FC (https://api.cartolafc.globo.com/partidas/[RODADA]), onde [RODADA] é o numeral da rodada de 0 a 37;
 * Classificação: UFMG (http://www.mat.ufmg.br/futebol/classificacao-geral_seriea/)
+
+## Resultados
+| Rodada | Pontuação | Variação (Cartoletas)|
+|--:|--:|--:|
+|01|34.53|-3.85|
+|02|30.81|15.43|
+|03|27.78|-7.28|
+|04|2.59|-9.7|
 
 ##### Notas
 
