@@ -3,7 +3,15 @@
 
 _Esta é uma aplicação que recomenda a escalação da rodada para o fantasy game Cartola FC através de um modelo matemático._
 
-  
+## Sobre
+
+O cartoleiro precisa tomar decisões para tentar maximizar a sua pontuação em cada rodada. Estas decisões podem ser:
+
+  * Escolher os melhores jogadores por posição.
+  * Escolher o melhor esquema tático para cada rodada.
+  * Escolher os jogadores que estejam dentro dos limites de cartoletas existentes na carteira.
+
+Tomar estas decisões é um grande desafio. Em nossa solução atual, buscamos desenvolver um modelo matemático de otimização considerando esquemas táticos disponíveis no Cartola FC. Para solucionar estes problemas estamos utilizando programação linear inteira.  
 
 ## Tecnologias
 
