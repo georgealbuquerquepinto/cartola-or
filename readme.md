@@ -40,6 +40,8 @@ Tomar estas decisões é um grande desafio. Em nossa solução atual, buscamos d
   - ![equation](https://latex.codecogs.com/gif.latex?\frac{PG_{clube}}{P_{total}}), onde ![equation](https://latex.codecogs.com/gif.latex?PG_{clube}) são os pontos ganhos do seu clube e ![equation](https://latex.codecogs.com/gif.latex?P_{total}) é o somatório dos pontos ganhos de todos os clubes;
   - ![equation](https://latex.codecogs.com/gif.latex?2-\frac{Pos_{clube}}{10}), onde ![equation](https://latex.codecogs.com/gif.latex?Pos_{clube}) é a posição de seu clube na tabela.
 
+* O jogador com maior valor na escalação é escolhido o capitão do time.
+
 ## :file_cabinet: Fontes de dados
 * Mercado (média, status, preço de cada jogador): API Cartola FC (https://api.cartolafc.globo.com/atletas/mercado);
 * Partidas: API Cartola FC (https://api.cartolafc.globo.com/partidas/[RODADA]), onde [RODADA] é o numeral da rodada de 0 a 37;
