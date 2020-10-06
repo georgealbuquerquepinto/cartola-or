@@ -62,6 +62,7 @@ Tomar estas decisões é um grande desafio. Em nossa solução atual, buscamos d
 |10|23.30|-9.30|
 |11|29.23|-3.98|
 |12|30.95|-2.93|
+|13|46.79|1.74|
 
 ##### :paperclip: Notas
 
