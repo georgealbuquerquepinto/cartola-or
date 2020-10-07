@@ -14,7 +14,7 @@ def mercadoAberto():
 
   status_mercado = requests.get(url_status_mercado).json()['status_mercado']
 
-  return status_mercado != 1
+  return status_mercado == 1
 
 def getClassificacao():
   CLUBES = {
