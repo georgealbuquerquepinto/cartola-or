@@ -9,6 +9,13 @@ mei_id = 4
 ata_id = 5
 tec_id = 6
 
+def mercadoAberto():
+  url_status_mercado = 'https://api.cartolafc.globo.com/mercado/status'
+
+  status_mercado = requests.get(url_status_mercado).json()['status_mercado']
+
+  return status_mercado != 1
+
 def getClassificacao():
   CLUBES = {
     'ATHLÉTICO-PR' : { 'id': 293 },
@@ -274,75 +281,78 @@ def solver(CLUBES, GOL, LAT, ZAG, MEI, ATA, TEC, cartoletas, ptsTotal):
   print('Capitão: %s %s (%s)' % (capitao['pos'], capitao['jogador'], capitao['clube']))
 
 def main():
-  # Recebe dados do mercado
-  atletas, clubes, partidas, classificacao = getMercado()
+  if mercadoAberto():
+    # Recebe dados do mercado
+    atletas, clubes, partidas, classificacao = getMercado()
 
-  # Ler a quantidade de cartoletas disponíveis
-  cartoletas = float(input('Digite a quantidade de cartoletas disponíveis: '))
+    # Ler a quantidade de cartoletas disponíveis
+    cartoletas = float(input('Digite a quantidade de cartoletas disponíveis: '))
 
-  GOL = []
-  LAT = []
-  ZAG = []
-  MEI = []
-  ATA = []
-  TEC = []
-  CLUBES = {}
-  ptsTotal = 0
+    GOL = []
+    LAT = []
+    ZAG = []
+    MEI = []
+    ATA = []
+    TEC = []
+    CLUBES = {}
+    ptsTotal = 0
 
-  # Ler dados dos clubes
-  for item in clubes:
-    C = {
-      'nome': clubes[item]['nome'],
-      'abreviacao': clubes[item]['abreviacao'],
-      'pos': 0,
-      'pts': 0,
-      'casa': 0
-    }
+    # Ler dados dos clubes
+    for item in clubes:
+      C = {
+        'nome': clubes[item]['nome'],
+        'abreviacao': clubes[item]['abreviacao'],
+        'pos': 0,
+        'pts': 0,
+        'casa': 0
+      }
+      
+      CLUBES[item] = C
     
-    CLUBES[item] = C
-  
-  # Ler dados das partidas
-  for item in partidas:
-    CLUBES[str(item['clube_casa_id'])]['casa'] = 1
+    # Ler dados das partidas
+    for item in partidas:
+      CLUBES[str(item['clube_casa_id'])]['casa'] = 1
 
-  # Ler dados da classificação
-  for item in classificacao:
-    CLUBES[str(item['clube'])]['pos'] = int(item['pos'])
-    CLUBES[str(item['clube'])]['pts'] = int(item['pts'])
-    ptsTotal += int(item['pts'])
+    # Ler dados da classificação
+    for item in classificacao:
+      CLUBES[str(item['clube'])]['pos'] = int(item['pos'])
+      CLUBES[str(item['clube'])]['pts'] = int(item['pts'])
+      ptsTotal += int(item['pts'])
 
-  if ptsTotal == 0:
-    ptsTotal = 1
-  
-  # Ler dados dos jogadores
-  for item in atletas:
-    J = {
-      'id'        : item['atleta_id'],
-      'apelido'   : item['apelido'],
-      'status_id' : int(item['status_id']),
-      'pontos_num': float(item['pontos_num']),
-      'preco_num' : float(item['preco_num']),
-      'media_num' : float(item['media_num']),
-      'posicao_id': int(item['posicao_id']),
-      'clube'     : int(item['clube_id'])
-    }
+    if ptsTotal == 0:
+      ptsTotal = 1
+    
+    # Ler dados dos jogadores
+    for item in atletas:
+      J = {
+        'id'        : item['atleta_id'],
+        'apelido'   : item['apelido'],
+        'status_id' : int(item['status_id']),
+        'pontos_num': float(item['pontos_num']),
+        'preco_num' : float(item['preco_num']),
+        'media_num' : float(item['media_num']),
+        'posicao_id': int(item['posicao_id']),
+        'clube'     : int(item['clube_id'])
+      }
 
-    # Seleciona jogadores com status Provável
-    if int(J['status_id']) == 7:
-      if int(J['posicao_id']) == gol_id:
-        GOL.append(J)
-      elif int(J['posicao_id']) == lat_id:
-        LAT.append(J)
-      elif int(J['posicao_id']) == zag_id:
-        ZAG.append(J)
-      elif int(J['posicao_id']) == mei_id:
-        MEI.append(J)
-      elif int(J['posicao_id']) == ata_id:
-        ATA.append(J)
-      elif int(J['posicao_id']) == tec_id:
-        TEC.append(J)
+      # Seleciona jogadores com status Provável
+      if int(J['status_id']) == 7:
+        if int(J['posicao_id']) == gol_id:
+          GOL.append(J)
+        elif int(J['posicao_id']) == lat_id:
+          LAT.append(J)
+        elif int(J['posicao_id']) == zag_id:
+          ZAG.append(J)
+        elif int(J['posicao_id']) == mei_id:
+          MEI.append(J)
+        elif int(J['posicao_id']) == ata_id:
+          ATA.append(J)
+        elif int(J['posicao_id']) == tec_id:
+          TEC.append(J)
 
-  solver(CLUBES, GOL, LAT, ZAG, MEI, ATA, TEC, cartoletas, ptsTotal)
+    solver(CLUBES, GOL, LAT, ZAG, MEI, ATA, TEC, cartoletas, ptsTotal)
+  else:
+    print('O mercado não está disponível no momento!')
 
 if __name__ == '__main__':
   main()
