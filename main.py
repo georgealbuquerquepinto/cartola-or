@@ -18,7 +18,7 @@ def mercadoAberto():
 
 def getClassificacao():
   CLUBES = {
-    'ATHLÉTICO-PR' : { 'id': 293 },
+    'ATHLETICO-PR' : { 'id': 293 },
     'ATLÉTICO-GO'  : { 'id': 373 },
     'ATLÉTICO-MG'  : { 'id': 282 },
     'BAHIA'        : { 'id': 265 },

@@ -77,6 +77,8 @@ Tomar estas decisões é um grande desafio. Em nossa solução atual, buscamos d
 |25|41.73|2.47|
 |26|19.34|-3.64|
 |27|56.41|3.96|
+|28|55.95|1.92|
+|29|39.72|-2.93|
 
 ##### :paperclip: Notas
 
