@@ -48,6 +48,8 @@ Tomar estas decisões é um grande desafio. Em nossa solução atual, buscamos d
 * Classificação do campeonato: UFMG (http://www.mat.ufmg.br/futebol/classificacao-geral_seriea/)
 
 ## :bar_chart: Resultados
+
+### Resultados por rodada
 | Rodada | Pontuação | Variação (Cartoletas)|
 |--:|--:|--:|
 |01|34.53|-3.85|
@@ -88,6 +90,37 @@ Tomar estas decisões é um grande desafio. Em nossa solução atual, buscamos d
 |36|57.12|-1.24|
 |37|41.36|-0.83|
 |38|50.69|0.50|
+
+### Jogadores mais escalados
+| # | Jogador | Clube | Escalações |
+|--:|:--|:--|--:|
+|  1 | Calegari         | Fluminense               | 21 |
+|  2 | Brenner          | São Paulo                | 13 |
+|  3 | Natan            | Flamengo                 | 10 |
+|  4 | João Paulo       | Santos                   |  9 |
+|  5 | Léo Chú          | Ceará                    |  9 |
+|  6 | Renato Kayzer    | Atlético-GO/Athlético-PR |  9 |
+|  7 | Yuri Alberto     | Internacional            |  9 |
+|  8 | Fábio Santos     | Corinthians              |  7 |
+|  9 | Luciano          | São Paulo                |  7 |
+| 10 | Patrick de Paula | Palmeiras                |  7 |
+
+### Clube com mais jogadores escalados
+| # | Clube | Escalações |
+|--:|:--|:--|
+|  1 | Flamengo      | 55 |
+|  2 | Internacional | 53 |
+|  3 | Fluminense    | 47 |
+|  4 | São Paulo     | 41 |
+|  5 | Atlético-GO   | 30 |
+|  6 | Corinthians   | 29 |
+|  7 | Ceará         | 28 |
+|  8 | Vasco         | 28 |
+|  9 | Santos        | 24 |
+| 10 | Palmeiras     | 23 |
+
+### Quantidade de jogadores escalados
+191 jogadores escalados
 
 ##### :paperclip: Notas
 
