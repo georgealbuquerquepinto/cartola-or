@@ -79,7 +79,7 @@ def getMercado():
 
   return atletas, clubes, partidas, classificacao
 
-def solver(CLUBES, GOL, LAT, ZAG, MEI, ATA, TEC, cartoletas, ptsTotal):
+def solver(CLUBES, GOL, LAT, ZAG, MEI, ATA, TEC, cartoletas, ptsTotal, pesoMedia, pesoCasa, pesoPontuacaoTime, pesoPosicaoTime, pesoAdicionalTime):
   # Definição do solver
   solver = pywraplp.Solver('simple_lp_program', pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
 
@@ -166,12 +166,12 @@ def solver(CLUBES, GOL, LAT, ZAG, MEI, ATA, TEC, cartoletas, ptsTotal):
 
   # Função objetivo
   solver.Maximize(
-    solver.Sum((GOL[i]['media_num'] + (CLUBES[str(GOL[i]['clube'])]['casa']) + (CLUBES[str(GOL[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(GOL[i]['clube'])]['pos'] / 10.0))) * GOL_b[i] for i in range(len(GOL_b))) +
-    solver.Sum((LAT[i]['media_num'] + (CLUBES[str(LAT[i]['clube'])]['casa']) + (CLUBES[str(LAT[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(LAT[i]['clube'])]['pos'] / 10.0))) * LAT_b[i] for i in range(len(LAT_b))) +
-    solver.Sum((ZAG[i]['media_num'] + (CLUBES[str(ZAG[i]['clube'])]['casa']) + (CLUBES[str(ZAG[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(ZAG[i]['clube'])]['pos'] / 10.0))) * ZAG_b[i] for i in range(len(ZAG_b))) +
-    solver.Sum((MEI[i]['media_num'] + (CLUBES[str(MEI[i]['clube'])]['casa']) + (CLUBES[str(MEI[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(MEI[i]['clube'])]['pos'] / 10.0))) * MEI_b[i] for i in range(len(MEI_b))) +
-    solver.Sum((ATA[i]['media_num'] + (CLUBES[str(ATA[i]['clube'])]['casa']) + (CLUBES[str(ATA[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(ATA[i]['clube'])]['pos'] / 10.0))) * ATA_b[i] for i in range(len(ATA_b))) +
-    solver.Sum((TEC[i]['media_num'] + (CLUBES[str(TEC[i]['clube'])]['casa']) + (CLUBES[str(TEC[i]['clube'])]['pts'] / ptsTotal) + (2.0 - (CLUBES[str(TEC[i]['clube'])]['pos'] / 10.0))) * TEC_b[i] for i in range(len(TEC_b)))
+    solver.Sum(((GOL[i]['media_num'] * pesoMedia) + (CLUBES[str(GOL[i]['clube'])]['casa'] * pesoCasa) + ((CLUBES[str(GOL[i]['clube'])]['pts'] / ptsTotal) * pesoPontuacaoTime) + (CLUBES[str(GOL[i]['clube'])]['pos'] * pesoPosicaoTime + pesoAdicionalTime)) * GOL_b[i] for i in range(len(GOL_b))) +
+    solver.Sum(((LAT[i]['media_num'] * pesoMedia) + (CLUBES[str(LAT[i]['clube'])]['casa'] * pesoCasa) + ((CLUBES[str(LAT[i]['clube'])]['pts'] / ptsTotal) * pesoPontuacaoTime) + (CLUBES[str(LAT[i]['clube'])]['pos'] * pesoPosicaoTime + pesoAdicionalTime)) * LAT_b[i] for i in range(len(LAT_b))) +
+    solver.Sum(((ZAG[i]['media_num'] * pesoMedia) + (CLUBES[str(ZAG[i]['clube'])]['casa'] * pesoCasa) + ((CLUBES[str(ZAG[i]['clube'])]['pts'] / ptsTotal) * pesoPontuacaoTime) + (CLUBES[str(ZAG[i]['clube'])]['pos'] * pesoPosicaoTime + pesoAdicionalTime)) * ZAG_b[i] for i in range(len(ZAG_b))) +
+    solver.Sum(((MEI[i]['media_num'] * pesoMedia) + (CLUBES[str(MEI[i]['clube'])]['casa'] * pesoCasa) + ((CLUBES[str(MEI[i]['clube'])]['pts'] / ptsTotal) * pesoPontuacaoTime) + (CLUBES[str(MEI[i]['clube'])]['pos'] * pesoPosicaoTime + pesoAdicionalTime)) * MEI_b[i] for i in range(len(MEI_b))) +
+    solver.Sum(((ATA[i]['media_num'] * pesoMedia) + (CLUBES[str(ATA[i]['clube'])]['casa'] * pesoCasa) + ((CLUBES[str(ATA[i]['clube'])]['pts'] / ptsTotal) * pesoPontuacaoTime) + (CLUBES[str(ATA[i]['clube'])]['pos'] * pesoPosicaoTime + pesoAdicionalTime)) * ATA_b[i] for i in range(len(ATA_b))) +
+    solver.Sum(((TEC[i]['media_num'] * pesoMedia) + (CLUBES[str(TEC[i]['clube'])]['casa'] * pesoCasa) + ((CLUBES[str(TEC[i]['clube'])]['pts'] / ptsTotal) * pesoPontuacaoTime) + (CLUBES[str(TEC[i]['clube'])]['pos'] * pesoPosicaoTime + pesoAdicionalTime)) * TEC_b[i] for i in range(len(TEC_b)))
   )
 
   # Resolvendo o problema
@@ -298,41 +298,41 @@ def main():
     ptsTotal = 0
 
     # Ler dados dos clubes
-    for item in clubes:
-      C = {
-        'nome': clubes[item]['nome'],
-        'abreviacao': clubes[item]['abreviacao'],
+    for clube in clubes:
+      clb = {
+        'nome': clubes[clube]['nome'],
+        'abreviacao': clubes[clube]['abreviacao'],
         'pos': 0,
         'pts': 0,
         'casa': 0
       }
       
-      CLUBES[item] = C
+      CLUBES[clube] = clb
     
     # Ler dados das partidas
-    for item in partidas:
-      CLUBES[str(item['clube_casa_id'])]['casa'] = 1
+    for partida in partidas:
+      CLUBES[str(partida['clube_casa_id'])]['casa'] = 1
 
     # Ler dados da classificação
-    for item in classificacao:
-      CLUBES[str(item['clube'])]['pos'] = int(item['pos'])
-      CLUBES[str(item['clube'])]['pts'] = int(item['pts'])
-      ptsTotal += int(item['pts'])
+    for clube in classificacao:
+      CLUBES[str(clube['clube'])]['pos'] = int(clube['pos'])
+      CLUBES[str(clube['clube'])]['pts'] = int(clube['pts'])
+      ptsTotal += int(clube['pts'])
 
     if ptsTotal == 0:
       ptsTotal = 1
     
     # Ler dados dos jogadores
-    for item in atletas:
+    for atleta in atletas:
       J = {
-        'id'        : item['atleta_id'],
-        'apelido'   : item['apelido'],
-        'status_id' : int(item['status_id']),
-        'pontos_num': float(item['pontos_num']),
-        'preco_num' : float(item['preco_num']),
-        'media_num' : float(item['media_num']),
-        'posicao_id': int(item['posicao_id']),
-        'clube'     : int(item['clube_id'])
+        'id'        : atleta['atleta_id'],
+        'apelido'   : atleta['apelido'],
+        'status_id' : int(atleta['status_id']),
+        'pontos_num': float(atleta['pontos_num']),
+        'preco_num' : float(atleta['preco_num']),
+        'media_num' : float(atleta['media_num']),
+        'posicao_id': int(atleta['posicao_id']),
+        'clube'     : int(atleta['clube_id'])
       }
 
       # Seleciona jogadores com status Provável
@@ -350,7 +350,7 @@ def main():
         elif int(J['posicao_id']) == tec_id:
           TEC.append(J)
 
-    solver(CLUBES, GOL, LAT, ZAG, MEI, ATA, TEC, cartoletas, ptsTotal)
+    solver(CLUBES, GOL, LAT, ZAG, MEI, ATA, TEC, cartoletas, ptsTotal, 1, 1, 1, -0.1, 2)
   else:
     print('O mercado não está disponível no momento!')
 
